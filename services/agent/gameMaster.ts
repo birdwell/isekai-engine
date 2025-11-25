@@ -5,6 +5,7 @@ import { GameStatus, Quest, Choice } from '@/types';
 import { createAgentTools } from './tools';
 import { getRelevantContext, createInitialMemory, needsSummary } from './memory';
 import { STRICT_ART_STYLE } from '../gemini/prompts';
+import { createTrace } from '@/services/langfuse';
 
 const GAME_MASTER_PROMPT = `
 You are "The Isekai Engine," an immersive, interactive text-adventure game master.
@@ -168,8 +169,16 @@ Current Turn: ${this.turnCount}
     const tools = this.createTools();
     const systemPrompt = this.buildSystemPrompt();
 
+    const trace = createTrace("game-master-turn", { turnCount: this.turnCount });
+
+    const generation = trace.generation({
+      name: this.model,
+      model: this.model,
+      input: { userInput, historyLength: this.conversationHistory.length },
+    });
+
     try {
-      const { text } = await generateText({
+      const { text, usage } = await generateText({
         model: this.google(this.model),
         system: systemPrompt,
         messages: this.conversationHistory,
@@ -182,6 +191,15 @@ Current Turn: ${this.turnCount}
 
       const parsed = parseAgentResponse(text);
       
+      generation.end({
+        output: parsed ? { narrative: parsed.narrative, location: parsed.status.location } : null,
+        usage: usage ? {
+          promptTokens: usage.inputTokens,
+          completionTokens: usage.outputTokens,
+          totalTokens: usage.inputTokens + usage.outputTokens,
+        } : undefined,
+      });
+
       if (!parsed) {
         return {
           scenePrompt: 'A mysterious void filled with swirling energy.',
@@ -206,6 +224,10 @@ Current Turn: ${this.turnCount}
 
       return parsed;
     } catch (error) {
+      generation.end({
+        level: "ERROR",
+        statusMessage: error instanceof Error ? error.message : String(error),
+      });
       console.error('GameMaster error:', error);
       throw error;
     }

@@ -10,6 +10,8 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { AuthScreen } from '@/components/AuthScreen';
 import { useGameAgent } from './hooks/useGameAgent';
 import { useMediaEngine } from './hooks/useMediaEngine';
+import { shutdownLangfuse, setLangfuseUserId, setLangfuseSessionId } from '@/services/langfuse';
+import { useUserContext } from '@/contexts/UserContext';
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -17,6 +19,16 @@ function App() {
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
   const [isCheckingKey, setIsCheckingKey] = useState<boolean>(true);
   const [notification, setNotification] = useState<Notification | null>(null);
+
+  const { userId, sessionId, startNewSession } = useUserContext();
+
+  useEffect(() => {
+    setLangfuseUserId(userId);
+  }, [userId]);
+
+  useEffect(() => {
+    setLangfuseSessionId(sessionId);
+  }, [sessionId]);
 
   const gameState = useGameAgent(hasApiKey);
   const mediaEngine = useMediaEngine(gameState.lastResponse?.scenePrompt, imageQuality);
@@ -62,6 +74,7 @@ function App() {
 
   const handleNewGame = () => {
     if (window.confirm("Start new game? This deletes your current save.")) {
+      startNewSession();
       gameState.startNewGame();
     }
   };
@@ -89,6 +102,10 @@ function App() {
       }
     };
     checkKey();
+
+    return () => {
+      shutdownLangfuse();
+    };
   }, []);
 
   if (isCheckingKey) {

@@ -20,7 +20,6 @@ services/
 
 | Function | Model | Purpose |
 |----------|-------|---------|
-| `generateAdventureText` | gemini-2.5-flash | Generate game narrative from player actions |
 | `generateSceneImage` | gemini-2.5-flash-image / gemini-3-pro-image-preview | Create scene illustrations |
 | `generateSceneVideo` | veo-3.1-fast-generate-preview | Animate scene images |
 | `generateSpeech` | gemini-2.5-flash-preview-tts | Narrate text as audio |

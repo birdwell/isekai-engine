@@ -28,7 +28,6 @@ vi.mock('@google/genai', () => {
 
 import { GoogleGenAI } from '@google/genai';
 import { getClient } from '../client';
-import { generateAdventureText } from '../textGeneration';
 import { generateSceneImage } from '../imageGeneration';
 import { generateSceneVideo } from '../videoGeneration';
 import { generateSpeech } from '../speechGeneration';
@@ -58,46 +57,6 @@ describe('getClient', () => {
     getClient();
     expect(consoleSpy).toHaveBeenCalledWith('API_KEY is missing from environment variables.');
     consoleSpy.mockRestore();
-  });
-});
-
-describe('generateAdventureText', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    process.env.API_KEY = 'test-api-key';
-  });
-
-  it('formats history and calls API correctly', async () => {
-    const mockText = 'Generated adventure text';
-    mockGenerateContent.mockResolvedValue({ text: mockText });
-
-    const history: ChatMessage[] = [
-      { role: 'user', text: 'Hello' },
-      { role: 'model', text: 'Welcome!' },
-    ];
-
-    const result = await generateAdventureText(history, 'Go north');
-
-    expect(mockGenerateContent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        model: 'gemini-2.5-flash',
-        contents: [
-          { role: 'user', parts: [{ text: 'Hello' }] },
-          { role: 'model', parts: [{ text: 'Welcome!' }] },
-          { role: 'user', parts: [{ text: 'Go north' }] },
-        ],
-        config: expect.objectContaining({
-          temperature: 0.9,
-        }),
-      })
-    );
-    expect(result).toBe(mockText);
-  });
-
-  it('throws on missing text response', async () => {
-    mockGenerateContent.mockResolvedValue({ text: null });
-
-    await expect(generateAdventureText([], 'test')).rejects.toThrow('No text generated');
   });
 });
 
