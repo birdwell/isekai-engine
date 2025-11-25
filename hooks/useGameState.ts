@@ -1,20 +1,56 @@
-
-import { useState, useCallback, useEffect } from 'react';
-import { ChatMessage, GameResponse, MediaItem } from '../types';
-import { generateAdventureText } from '../services/geminiService';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { ChatMessage, GameResponse, MediaItem, QuestState } from '../types';
+import { generateAdventureText } from '@/services/gemini';
 import { parseGameResponse } from '../utils/parser';
+import { useQuestSystem } from './useQuestSystem';
+
+const AUTO_SAVE_INTERVAL = 60000; // Auto-save every 60 seconds
+const SAVE_KEY = 'isekai_save';
 
 export const useGameState = (hasApiKey: boolean) => {
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [lastResponse, setLastResponse] = useState<GameResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [questLog, setQuestLog] = useState<string[]>([]);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [gameStarted, setGameStarted] = useState<boolean>(false);
+  const [lastAutoSave, setLastAutoSave] = useState<number | null>(null);
+  
+  const questSystem = useQuestSystem();
+  const galleryRef = useRef<MediaItem[]>([]);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const turnCountRef = useRef<number>(0);
 
-  // Load Game Logic
+  const saveGame = useCallback((gallery: MediaItem[], isAutoSave = false) => {
+    try {
+      if (isAutoSave) {
+        setSaveStatus('saving');
+      }
+      
+      const saveData = {
+        history,
+        lastResponse,
+        gallery,
+        questState: questSystem.questState,
+        timestamp: Date.now(),
+        turnCount: turnCountRef.current
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+      
+      setSaveStatus('saved');
+      if (isAutoSave) {
+        setLastAutoSave(Date.now());
+      }
+      setTimeout(() => setSaveStatus('idle'), 2000);
+      return true;
+    } catch (e) {
+      console.error("Save failed", e);
+      setSaveStatus('idle');
+      return false;
+    }
+  }, [history, lastResponse, questSystem.questState]);
+
   const loadGame = useCallback(() => {
-    const savedData = localStorage.getItem('isekai_save');
+    const savedData = localStorage.getItem(SAVE_KEY);
     if (!savedData) return false;
 
     try {
@@ -22,59 +58,60 @@ export const useGameState = (hasApiKey: boolean) => {
       if (parsed.history && Array.isArray(parsed.history)) {
         setHistory(parsed.history);
         setLastResponse(parsed.lastResponse);
-        setQuestLog(parsed.questLog || []);
+        if (parsed.questState) {
+          questSystem.loadQuestState(parsed.questState);
+        }
+        if (parsed.turnCount) {
+          turnCountRef.current = parsed.turnCount;
+        }
         setGameStarted(true);
-        // Note: Gallery loading is handled by useMediaEngine reading the same localstorage key
         return true;
       }
     } catch (e) {
       console.error("Failed to load save:", e);
     }
     return false;
-  }, []);
-
-  // Save Game Logic
-  const saveGame = useCallback((gallery: MediaItem[]) => {
-    try {
-      const saveData = {
-        history,
-        lastResponse,
-        gallery, // Save the full history of images
-        questLog,
-        timestamp: Date.now()
-      };
-      localStorage.setItem('isekai_save', JSON.stringify(saveData));
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-      return true;
-    } catch (e) {
-      console.error("Save failed", e);
-      return false;
-    }
-  }, [history, lastResponse, questLog]);
+  }, [questSystem]);
 
   const startNewGame = useCallback(() => {
-     localStorage.removeItem('isekai_save');
-     window.location.reload();
+    localStorage.removeItem(SAVE_KEY);
+    window.location.reload();
   }, []);
 
-  // Auto-init game on boot
+  const performAutoSave = useCallback(() => {
+    if (gameStarted && history.length > 0 && !loading) {
+      saveGame(galleryRef.current, true);
+    }
+  }, [gameStarted, history.length, loading, saveGame]);
+
+  useEffect(() => {
+    if (!gameStarted || !hasApiKey) return;
+
+    autoSaveTimerRef.current = setInterval(() => {
+      performAutoSave();
+    }, AUTO_SAVE_INTERVAL);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [gameStarted, hasApiKey, performAutoSave]);
+
   useEffect(() => {
     if (!hasApiKey) return;
 
-    // Try to auto-load
     const loaded = loadGame();
     
-    // If no save, start fresh
     if (!loaded && !gameStarted) {
       setGameStarted(true);
       handleTurn("Initialize simulation. Introduce yourself as The Administrator in the Divine Realm.");
     }
-  }, [hasApiKey]); // Only run when we have a key
+  }, [hasApiKey]);
 
-  // The Core Game Loop
   const handleTurn = useCallback(async (userAction: string) => {
     setLoading(true);
+    turnCountRef.current += 1;
     
     const newHistory: ChatMessage[] = [
       ...history,
@@ -89,33 +126,37 @@ export const useGameState = (hasApiKey: boolean) => {
       setLastResponse(parsed);
       setHistory(prev => [...prev, { role: 'model', text: textResponse }]);
 
-      // Update Quest Log
       if (parsed.status?.activeQuest) {
-         setQuestLog(prev => {
-             const current = parsed.status?.activeQuest || "";
-             if (current !== "Unknown" && current !== prev[prev.length - 1]) {
-                 return [...prev, current];
-             }
-             return prev;
-         });
+        questSystem.updateQuestFromNarrative(parsed.status.activeQuest);
+      }
+
+      if (turnCountRef.current % 5 === 0 && galleryRef.current.length > 0) {
+        saveGame(galleryRef.current, true);
       }
     } catch (error) {
       console.error("Game Turn Error:", error);
     } finally {
       setLoading(false);
     }
-  }, [history]);
+  }, [history, questSystem, saveGame]);
+
+  const setGalleryRef = useCallback((gallery: MediaItem[]) => {
+    galleryRef.current = gallery;
+  }, []);
 
   return {
     history,
     lastResponse,
     loading,
-    questLog,
+    questLog: questSystem.questState.quests.map(q => q.title),
+    questSystem,
     saveStatus,
     gameStarted,
+    lastAutoSave,
     handleTurn,
     saveGame,
     loadGame,
-    startNewGame
+    startNewGame,
+    setGalleryRef
   };
 };

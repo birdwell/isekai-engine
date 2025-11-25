@@ -1,33 +1,32 @@
-
 import React, { useState, useEffect } from 'react';
-import { StatusPanel } from './components/StatusPanel';
-import { NarrativeDisplay } from './components/NarrativeDisplay';
-import { ActionPanel } from './components/ActionPanel';
-import { Visualizer } from './components/Visualizer';
-import { SettingsModal } from './components/SettingsModal';
+import { StatusPanel } from '@/components/StatusPanel';
+import { NarrativeDisplay } from '@/components/NarrativeDisplay';
+import { ActionPanel } from '@/components/ActionPanel';
+import { Visualizer } from '@/components/Visualizer';
+import { SettingsModal } from '@/components/SettingsModal';
 import { useGameState } from './hooks/useGameState';
 import { useMediaEngine } from './hooks/useMediaEngine';
-import { Terminal, Save, RotateCcw, CheckCircle, FolderOpen, AlertCircle, Settings, Lock } from 'lucide-react';
+import { Terminal, Save, RotateCcw, CheckCircle, FolderOpen, AlertCircle, Settings, Lock, Cloud } from 'lucide-react';
 
 function App() {
-  // --- 1. Global App State ---
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [imageQuality, setImageQuality] = useState<'fast' | 'quality'>('fast');
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
   const [isCheckingKey, setIsCheckingKey] = useState<boolean>(true);
   const [notification, setNotification] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
 
-  // --- 2. Custom Hooks (Logic Layers) ---
   const gameState = useGameState(hasApiKey);
   const mediaEngine = useMediaEngine(gameState.lastResponse?.scenePrompt, imageQuality);
 
-  // --- 3. Notification Helper ---
+  useEffect(() => {
+    gameState.setGalleryRef(mediaEngine.gallery);
+  }, [mediaEngine.gallery, gameState.setGalleryRef]);
+
   const showNotification = (msg: string, type: 'success' | 'error' = 'success') => {
     setNotification({ msg, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // --- 4. Event Handlers ---
   const handleSelectKey = async () => {
       if ((window as any).aistudio) {
           try {
@@ -41,7 +40,6 @@ function App() {
   };
 
   const handleSave = () => {
-      // We pass the full gallery to save
       const success = gameState.saveGame(mediaEngine.gallery);
       if (success) showNotification("Game Saved");
       else showNotification("Save Failed", 'error');
@@ -50,11 +48,9 @@ function App() {
   const handleLoad = () => {
       if (window.confirm("Load previous save? Unsaved progress will be lost.")) {
           const success = gameState.loadGame();
-          // Note: Gallery loads automatically via localstorage hook in useMediaEngine
-          // But to be safe, a reload is often cleaner in this architecture or we'd need to expose a setGallery on mediaEngine
           if (success) {
               showNotification("Game Loaded");
-              setTimeout(() => window.location.reload(), 500); // Reload to sync all hooks
+              setTimeout(() => window.location.reload(), 500);
           } else {
               showNotification("No save found", 'error');
           }
@@ -74,7 +70,6 @@ function App() {
       else showNotification("Video generation failed", 'error');
   };
 
-  // Check API Key on mount
   useEffect(() => {
     const checkKey = async () => {
         try {
@@ -82,7 +77,7 @@ function App() {
                 const hasKey = await (window as any).aistudio.hasSelectedApiKey();
                 setHasApiKey(hasKey);
             } else {
-                setHasApiKey(true); // Dev fallback
+                setHasApiKey(true);
             }
         } catch (e) {
             console.error(e);
@@ -93,8 +88,6 @@ function App() {
     checkKey();
   }, []);
 
-
-  // --- 5. Render Views ---
 
   if (isCheckingKey) {
       return <div className="h-screen w-screen bg-slate-950 flex items-center justify-center text-amber-500">Initializing System...</div>;
@@ -125,6 +118,14 @@ function App() {
       );
   }
 
+  const formatAutoSaveTime = (timestamp: number | null) => {
+    if (!timestamp) return null;
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}m ago`;
+  };
+
   return (
     <div className="h-screen w-screen bg-slate-950 text-slate-200 overflow-hidden flex flex-col font-sans">
       
@@ -147,7 +148,6 @@ function App() {
         </div>
       )}
 
-      {/* Header */}
       <header className="h-16 bg-slate-900 border-b border-slate-800 flex items-center px-6 justify-between shrink-0 z-40 shadow-md">
         <div className="flex items-center gap-3">
           <div className="bg-gradient-to-br from-amber-600 to-amber-700 p-2 rounded-lg shadow-lg shadow-amber-900/20">
@@ -160,6 +160,13 @@ function App() {
         </div>
         
         <div className="flex items-center gap-2">
+          {gameState.lastAutoSave && (
+            <div className="hidden md:flex items-center gap-1.5 text-[10px] text-slate-500 mr-2">
+              <Cloud className="w-3 h-3" />
+              <span>Auto-saved {formatAutoSaveTime(gameState.lastAutoSave)}</span>
+            </div>
+          )}
+
            <button
             onClick={() => setIsSettingsOpen(true)}
             className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-md transition-colors mr-2"
@@ -175,6 +182,8 @@ function App() {
               flex items-center gap-2 px-3 py-1.5 rounded-md border transition-all text-xs font-bold uppercase tracking-wider
               ${gameState.saveStatus === 'saved' 
                 ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800' 
+                : gameState.saveStatus === 'saving'
+                ? 'bg-blue-900/30 text-blue-400 border-blue-800'
                 : 'bg-slate-800 hover:bg-amber-900/30 hover:border-amber-700 text-slate-300 hover:text-amber-400 border-slate-700'
               }
               ${(!gameState.lastResponse || gameState.loading) ? 'opacity-50 cursor-not-allowed' : ''}
@@ -184,6 +193,11 @@ function App() {
               <>
                 <CheckCircle className="w-4 h-4" />
                 <span className="hidden md:inline">Saved</span>
+              </>
+            ) : gameState.saveStatus === 'saving' ? (
+              <>
+                <Cloud className="w-4 h-4 animate-pulse" />
+                <span className="hidden md:inline">Saving</span>
               </>
             ) : (
               <>
@@ -212,10 +226,8 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
         
-        {/* Left Sidebar: Visuals & Stats */}
         <div className="flex flex-col w-full md:w-[380px] lg:w-[480px] bg-slate-900/50 border-r border-slate-800 shrink-0 overflow-y-auto custom-scrollbar">
           <Visualizer 
              mediaItem={mediaEngine.currentMedia} 
@@ -234,12 +246,15 @@ function App() {
               <StatusPanel 
                   status={gameState.lastResponse?.status || null} 
                   onUseItem={(item) => !gameState.loading && gameState.handleTurn(`I use the ${item}.`)}
-                  questLog={gameState.questLog}
+                  activeQuest={gameState.questSystem.activeQuest}
+                  quests={gameState.questSystem.questState.quests}
+                  activeQuestId={gameState.questSystem.questState.activeQuestId}
+                  onSetActiveQuest={gameState.questSystem.setActiveQuest}
+                  getQuestProgress={gameState.questSystem.getQuestProgress}
               />
           </div>
         </div>
 
-        {/* Right Area: Narrative & Actions */}
         <div className="flex-1 flex flex-col relative min-w-0 bg-slate-950">
           <div className="flex-1 overflow-y-auto scroll-smooth flex flex-col custom-scrollbar">
              <NarrativeDisplay 

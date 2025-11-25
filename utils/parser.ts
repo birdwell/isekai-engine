@@ -45,6 +45,10 @@ export const parseGameResponse = (text: string): GameResponse => {
     const inventoryMatch = statusText.match(/\*\*Inventory:\*\*\s*(.*)/i);
     const inventory = inventoryMatch ? inventoryMatch[1].split(',').map(i => i.trim()).filter(i => i) : [];
 
+    // Skills parsing
+    const skillsMatch = statusText.match(/\*\*Skills:\*\*\s*(.*)/i);
+    const skills = skillsMatch ? skillsMatch[1].split(',').map(s => s.trim()).filter(s => s) : [];
+
     // Currency Parsing
     const moneyMatch = statusText.match(/\*\*Money:\*\*\s*(?:\[?(\d+)\]?|(\d+))\s*Gold,?\s*(?:\[?(\d+)\]?|(\d+))\s*Silver,?\s*(?:\[?(\d+)\]?|(\d+))\s*Copper/i);
     
@@ -60,6 +64,7 @@ export const parseGameResponse = (text: string): GameResponse => {
       hp,
       location,
       inventory,
+      skills,
       activeQuest: quest,
       currency: { gold, silver, copper }
     };

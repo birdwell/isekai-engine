@@ -5,10 +5,48 @@ export interface Currency {
   copper: number;
 }
 
+export enum QuestStatus {
+  Active = 'active',
+  Completed = 'completed',
+  Failed = 'failed',
+  Hidden = 'hidden'
+}
+
+export enum QuestType {
+  Main = 'main',
+  Side = 'side',
+  Hidden = 'hidden'
+}
+
+export interface QuestObjective {
+  id: string;
+  description: string;
+  isCompleted: boolean;
+  isOptional?: boolean;
+}
+
+export interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  type: QuestType;
+  status: QuestStatus;
+  objectives: QuestObjective[];
+  rewards?: string[];
+  startedAt: number;
+  completedAt?: number;
+}
+
+export interface QuestState {
+  quests: Quest[];
+  activeQuestId: string | null;
+}
+
 export interface GameStatus {
   hp: string;
   location: string;
   inventory: string[];
+  skills: string[];
   activeQuest: string;
   currency: Currency;
 }

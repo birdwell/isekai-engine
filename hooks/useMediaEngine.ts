@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { generateSceneImage, generateSceneVideo } from '../services/geminiService';
+import { generateSceneImage, generateSceneVideo } from '@/services/gemini';
 import { MediaItem } from '../types';
 
 export const useMediaEngine = (
@@ -145,10 +145,10 @@ export const useMediaEngine = (
         autoPaint,
         setAutoPaint,
         generateVideo,
-        generateImageForScene: () => scenePrompt && generateImage(scenePrompt),
+        generateImageForScene: () => { if (scenePrompt && scenePrompt.length > 0) generateImage(scenePrompt); },
         regenerateCurrent,
         nextImage,
         prevImage,
-        canPaintNew: scenePrompt && (gallery.length === 0 || gallery[gallery.length-1].prompt !== scenePrompt)
+        canPaintNew: scenePrompt && scenePrompt.length > 0 && (gallery.length === 0 || gallery[gallery.length-1].prompt !== scenePrompt)
     };
 };
