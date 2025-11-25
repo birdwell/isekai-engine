@@ -32,8 +32,8 @@ vi.mock('@/components/SettingsModal', () => ({
   )
 }));
 
-vi.mock('./hooks/useGameState', () => ({
-  useGameState: () => ({
+vi.mock('./hooks/useGameAgent', () => ({
+  useGameAgent: () => ({
     history: [],
     lastResponse: null,
     loading: false,
