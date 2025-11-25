@@ -3,7 +3,10 @@
 ## Commands
 - `npm run dev` - Start development server (Vite)
 - `npm run build` - Production build
-- `npx tsc --noEmit` - Typecheck only (no tests configured)
+- `npx tsc --noEmit` - Typecheck only
+- `npm test` - Run tests with Vitest (watch mode)
+- `npm test -- --run` - Run tests once
+- `npm run test:coverage` - Run tests with coverage report
 
 ## Architecture
 React 19 + Vite + TypeScript app. An AI-powered text adventure game using Google Gemini APIs.

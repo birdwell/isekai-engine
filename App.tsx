@@ -4,16 +4,19 @@ import { NarrativeDisplay } from '@/components/NarrativeDisplay';
 import { ActionPanel } from '@/components/ActionPanel';
 import { Visualizer } from '@/components/Visualizer';
 import { SettingsModal } from '@/components/SettingsModal';
+import { NotificationToast, Notification } from '@/components/NotificationToast';
+import { AppHeader } from '@/components/AppHeader';
+import { LoadingScreen } from '@/components/LoadingScreen';
+import { AuthScreen } from '@/components/AuthScreen';
 import { useGameState } from './hooks/useGameState';
 import { useMediaEngine } from './hooks/useMediaEngine';
-import { Terminal, Save, RotateCcw, CheckCircle, FolderOpen, AlertCircle, Settings, Lock, Cloud } from 'lucide-react';
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [imageQuality, setImageQuality] = useState<'fast' | 'quality'>('fast');
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
   const [isCheckingKey, setIsCheckingKey] = useState<boolean>(true);
-  const [notification, setNotification] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
+  const [notification, setNotification] = useState<Notification | null>(null);
 
   const gameState = useGameState(hasApiKey);
   const mediaEngine = useMediaEngine(gameState.lastResponse?.scenePrompt, imageQuality);
@@ -28,103 +31,73 @@ function App() {
   };
 
   const handleSelectKey = async () => {
-      if ((window as any).aistudio) {
-          try {
-            await (window as any).aistudio.openSelectKey();
-            const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-            setHasApiKey(hasKey);
-          } catch(e) {
-              console.error(e);
-          }
+    if ((window as any).aistudio) {
+      try {
+        await (window as any).aistudio.openSelectKey();
+        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+        setHasApiKey(hasKey);
+      } catch(e) {
+        console.error(e);
       }
+    }
   };
 
   const handleSave = () => {
-      const success = gameState.saveGame(mediaEngine.gallery);
-      if (success) showNotification("Game Saved");
-      else showNotification("Save Failed", 'error');
+    const success = gameState.saveGame(mediaEngine.gallery);
+    if (success) showNotification("Game Saved");
+    else showNotification("Save Failed", 'error');
   };
 
   const handleLoad = () => {
-      if (window.confirm("Load previous save? Unsaved progress will be lost.")) {
-          const success = gameState.loadGame();
-          if (success) {
-              showNotification("Game Loaded");
-              setTimeout(() => window.location.reload(), 500);
-          } else {
-              showNotification("No save found", 'error');
-          }
+    if (window.confirm("Load previous save? Unsaved progress will be lost.")) {
+      const success = gameState.loadGame();
+      if (success) {
+        showNotification("Game Loaded");
+        setTimeout(() => window.location.reload(), 500);
+      } else {
+        showNotification("No save found", 'error');
       }
+    }
   };
 
   const handleNewGame = () => {
-      if (window.confirm("Start new game? This deletes your current save.")) {
-          gameState.startNewGame();
-      }
+    if (window.confirm("Start new game? This deletes your current save.")) {
+      gameState.startNewGame();
+    }
   };
 
   const handleGenerateVideo = async () => {
-      showNotification("Rendering cinematic... (~1 min)", 'success');
-      const success = await mediaEngine.generateVideo();
-      if (success) showNotification("Cinematic ready!", 'success');
-      else showNotification("Video generation failed", 'error');
+    showNotification("Rendering cinematic... (~1 min)", 'success');
+    const success = await mediaEngine.generateVideo();
+    if (success) showNotification("Cinematic ready!", 'success');
+    else showNotification("Video generation failed", 'error');
   };
 
   useEffect(() => {
     const checkKey = async () => {
-        try {
-            if ((window as any).aistudio) {
-                const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-                setHasApiKey(hasKey);
-            } else {
-                setHasApiKey(true);
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsCheckingKey(false);
+      try {
+        if ((window as any).aistudio) {
+          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+          setHasApiKey(hasKey);
+        } else {
+          setHasApiKey(true);
         }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsCheckingKey(false);
+      }
     };
     checkKey();
   }, []);
 
-
   if (isCheckingKey) {
-      return <div className="h-screen w-screen bg-slate-950 flex items-center justify-center text-amber-500">Initializing System...</div>;
+    return <LoadingScreen />;
   }
 
   if (!hasApiKey) {
-      return (
-          <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-6">
-              <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/50 mb-4 animate-pulse">
-                  <Lock className="w-10 h-10 text-amber-500" />
-              </div>
-              <h1 className="text-4xl font-serif font-bold text-amber-100">AUTHENTICATION REQUIRED</h1>
-              <p className="text-slate-400 max-w-md">
-                  Access to the Isekai Engine requires a valid Neural Link (API Key). <br/>
-                  High-fidelity world generation and time manipulation features are enabled.
-              </p>
-              <button 
-                onClick={handleSelectKey}
-                className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition-all shadow-lg shadow-amber-900/20 flex items-center gap-2"
-              >
-                  <Terminal className="w-5 h-5" />
-                  CONNECT NEURAL LINK
-              </button>
-              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="text-xs text-slate-600 hover:text-amber-500 underline">
-                  Acquire Access Key
-              </a>
-          </div>
-      );
+    return <AuthScreen onSelectKey={handleSelectKey} />;
   }
-
-  const formatAutoSaveTime = (timestamp: number | null) => {
-    if (!timestamp) return null;
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}m ago`;
-  };
 
   return (
     <div className="h-screen w-screen bg-slate-950 text-slate-200 overflow-hidden flex flex-col font-sans">
@@ -138,129 +111,54 @@ function App() {
         setAutoPaint={mediaEngine.setAutoPaint}
       />
 
-      {notification && (
-        <div className={`
-          fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg border flex items-center gap-3 animate-fade-in transition-all
-          ${notification.type === 'success' ? 'bg-slate-800 border-emerald-500/50 text-emerald-400' : 'bg-slate-800 border-red-500/50 text-red-400'}
-        `}>
-          {notification.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-          <span className="font-bold text-sm tracking-wide">{notification.msg}</span>
-        </div>
-      )}
+      <NotificationToast notification={notification} />
 
-      <header className="h-16 bg-slate-900 border-b border-slate-800 flex items-center px-6 justify-between shrink-0 z-40 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-amber-600 to-amber-700 p-2 rounded-lg shadow-lg shadow-amber-900/20">
-             <Terminal className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="font-serif font-bold text-xl tracking-wider text-amber-100 hidden md:block text-shadow-sm">ISEKAI ENGINE</h1>
-            <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">System Online v3.1</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {gameState.lastAutoSave && (
-            <div className="hidden md:flex items-center gap-1.5 text-[10px] text-slate-500 mr-2">
-              <Cloud className="w-3 h-3" />
-              <span>Auto-saved {formatAutoSaveTime(gameState.lastAutoSave)}</span>
-            </div>
-          )}
-
-           <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-md transition-colors mr-2"
-            title="System Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-
-          <button
-            onClick={handleSave}
-            disabled={!gameState.lastResponse || gameState.loading}
-            className={`
-              flex items-center gap-2 px-3 py-1.5 rounded-md border transition-all text-xs font-bold uppercase tracking-wider
-              ${gameState.saveStatus === 'saved' 
-                ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800' 
-                : gameState.saveStatus === 'saving'
-                ? 'bg-blue-900/30 text-blue-400 border-blue-800'
-                : 'bg-slate-800 hover:bg-amber-900/30 hover:border-amber-700 text-slate-300 hover:text-amber-400 border-slate-700'
-              }
-              ${(!gameState.lastResponse || gameState.loading) ? 'opacity-50 cursor-not-allowed' : ''}
-            `}
-          >
-            {gameState.saveStatus === 'saved' ? (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                <span className="hidden md:inline">Saved</span>
-              </>
-            ) : gameState.saveStatus === 'saving' ? (
-              <>
-                <Cloud className="w-4 h-4 animate-pulse" />
-                <span className="hidden md:inline">Saving</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span className="hidden md:inline">Save</span>
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={handleLoad}
-            disabled={gameState.loading}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-blue-900/30 text-slate-300 hover:text-blue-400 rounded-md border border-slate-700 hover:border-blue-800 transition-colors text-xs font-bold uppercase tracking-wider"
-          >
-            <FolderOpen className="w-4 h-4" />
-            <span className="hidden md:inline">Load</span>
-          </button>
-
-          <button
-            onClick={handleNewGame}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 rounded-md border border-slate-700 hover:border-red-800 transition-colors text-xs font-bold uppercase tracking-wider"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span className="hidden md:inline">Restart</span>
-          </button>
-        </div>
-      </header>
+      <AppHeader
+        lastAutoSave={gameState.lastAutoSave}
+        saveStatus={gameState.saveStatus}
+        canSave={!!gameState.lastResponse}
+        loading={gameState.loading}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onSave={handleSave}
+        onLoad={handleLoad}
+        onNewGame={handleNewGame}
+      />
 
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
         
         <div className="flex flex-col w-full md:w-[380px] lg:w-[480px] bg-slate-900/50 border-r border-slate-800 shrink-0 overflow-y-auto custom-scrollbar">
           <Visualizer 
-             mediaItem={mediaEngine.currentMedia} 
-             gallerySize={mediaEngine.gallery.length}
-             currentIndex={mediaEngine.currentIndex}
-             loading={mediaEngine.imageLoading} 
-             videoLoading={mediaEngine.videoLoading}
-             onGenerateVideo={handleGenerateVideo}
-             onPaintScene={mediaEngine.generateImageForScene}
-             onRegenerate={mediaEngine.regenerateCurrent}
-             canPaintNew={mediaEngine.canPaintNew}
-             onNext={mediaEngine.nextImage}
-             onPrev={mediaEngine.prevImage}
+            mediaItem={mediaEngine.currentMedia} 
+            gallerySize={mediaEngine.gallery.length}
+            currentIndex={mediaEngine.currentIndex}
+            loading={mediaEngine.imageLoading} 
+            videoLoading={mediaEngine.videoLoading}
+            onGenerateVideo={handleGenerateVideo}
+            onPaintScene={mediaEngine.generateImageForScene}
+            onRegenerate={mediaEngine.regenerateCurrent}
+            canPaintNew={mediaEngine.canPaintNew}
+            onNext={mediaEngine.nextImage}
+            onPrev={mediaEngine.prevImage}
           />
           <div className="flex-1 relative">
-              <StatusPanel 
-                  status={gameState.lastResponse?.status || null} 
-                  onUseItem={(item) => !gameState.loading && gameState.handleTurn(`I use the ${item}.`)}
-                  activeQuest={gameState.questSystem.activeQuest}
-                  quests={gameState.questSystem.questState.quests}
-                  activeQuestId={gameState.questSystem.questState.activeQuestId}
-                  onSetActiveQuest={gameState.questSystem.setActiveQuest}
-                  getQuestProgress={gameState.questSystem.getQuestProgress}
-              />
+            <StatusPanel 
+              status={gameState.lastResponse?.status || null} 
+              onUseItem={(item) => !gameState.loading && gameState.handleTurn(`I use the ${item}.`)}
+              activeQuest={gameState.questSystem.activeQuest}
+              quests={gameState.questSystem.questState.quests}
+              activeQuestId={gameState.questSystem.questState.activeQuestId}
+              onSetActiveQuest={gameState.questSystem.setActiveQuest}
+              getQuestProgress={gameState.questSystem.getQuestProgress}
+            />
           </div>
         </div>
 
         <div className="flex-1 flex flex-col relative min-w-0 bg-slate-950">
           <div className="flex-1 overflow-y-auto scroll-smooth flex flex-col custom-scrollbar">
-             <NarrativeDisplay 
-               response={gameState.lastResponse} 
-               isLoading={gameState.loading} 
-             />
+            <NarrativeDisplay 
+              response={gameState.lastResponse} 
+              isLoading={gameState.loading} 
+            />
           </div>
           
           <ActionPanel 

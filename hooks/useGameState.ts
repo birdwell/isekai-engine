@@ -19,6 +19,16 @@ export const useGameState = (hasApiKey: boolean) => {
   const galleryRef = useRef<MediaItem[]>([]);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const turnCountRef = useRef<number>(0);
+  
+  const historyRef = useRef(history);
+  const lastResponseRef = useRef(lastResponse);
+  const questStateRef = useRef(questSystem.questState);
+  
+  useEffect(() => {
+    historyRef.current = history;
+    lastResponseRef.current = lastResponse;
+    questStateRef.current = questSystem.questState;
+  }, [history, lastResponse, questSystem.questState]);
 
   const saveGame = useCallback((gallery: MediaItem[], isAutoSave = false) => {
     try {
@@ -27,10 +37,10 @@ export const useGameState = (hasApiKey: boolean) => {
       }
       
       const saveData = {
-        history,
-        lastResponse,
+        history: historyRef.current,
+        lastResponse: lastResponseRef.current,
         gallery,
-        questState: questSystem.questState,
+        questState: questStateRef.current,
         timestamp: Date.now(),
         turnCount: turnCountRef.current
       };
@@ -47,7 +57,7 @@ export const useGameState = (hasApiKey: boolean) => {
       setSaveStatus('idle');
       return false;
     }
-  }, [history, lastResponse, questSystem.questState]);
+  }, []);
 
   const loadGame = useCallback(() => {
     const savedData = localStorage.getItem(SAVE_KEY);
