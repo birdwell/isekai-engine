@@ -11,10 +11,13 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.43",
     "@google/genai": "^1.30.0",
+    "ai": "^5.0.101",
     "lucide-react": "^0.554.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

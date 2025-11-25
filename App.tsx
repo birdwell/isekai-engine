@@ -8,7 +8,7 @@ import { NotificationToast, Notification } from '@/components/NotificationToast'
 import { AppHeader } from '@/components/AppHeader';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { AuthScreen } from '@/components/AuthScreen';
-import { useGameState } from './hooks/useGameState';
+import { useGameAgent } from './hooks/useGameAgent';
 import { useMediaEngine } from './hooks/useMediaEngine';
 
 function App() {
@@ -18,7 +18,7 @@ function App() {
   const [isCheckingKey, setIsCheckingKey] = useState<boolean>(true);
   const [notification, setNotification] = useState<Notification | null>(null);
 
-  const gameState = useGameState(hasApiKey);
+  const gameState = useGameAgent(hasApiKey);
   const mediaEngine = useMediaEngine(gameState.lastResponse?.scenePrompt, imageQuality);
 
   useEffect(() => {

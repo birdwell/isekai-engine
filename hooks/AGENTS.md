@@ -6,7 +6,7 @@ Custom React hooks for game state and media management.
 
 | Hook | Purpose |
 |------|---------|
-| `useGameState` | Core game logic: history, turns, save/load, quest integration |
+| `useGameAgent` | Core game logic: agent-based turns, save/load, quest integration |
 | `useMediaEngine` | Image/video gallery: generation, navigation, auto-paint |
 | `useAudioPlayer` | Text-to-speech: play/stop narrative audio |
 | `useQuestSystem` | Quest tracking: objectives, progress, completion |
@@ -38,9 +38,9 @@ Custom React hooks for game state and media management.
 ## Dependencies
 
 ```
-useGameState
-├── useQuestSystem (quest management)
-└── generateAdventureText (Gemini API)
+useGameAgent
+├── GameMasterAgent (agent service)
+└── GameMemory (save/load state)
 
 useMediaEngine
 ├── generateSceneImage (Gemini API)

@@ -12,7 +12,7 @@
 React 19 + Vite + TypeScript app. An AI-powered text adventure game using Google Gemini APIs.
 - `App.tsx` - Main component, orchestrates game state and media engine
 - `components/` - React components (ActionPanel, NarrativeDisplay, StatusPanel, Visualizer, SettingsModal)
-- `hooks/` - Custom hooks: `useGameState` (game logic), `useMediaEngine` (image/video generation)
+- `hooks/` - Custom hooks: `useGameAgent` (game logic), `useMediaEngine` (image/video generation)
 - `services/geminiService.ts` - Gemini API calls (text, image, video, TTS generation)
 - `types.ts` - Shared TypeScript interfaces (GameStatus, GameResponse, Choice, etc.)
 
