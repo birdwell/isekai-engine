@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseGameResponse } from './parser';
+import { parseGameResponse } from '../parser';
 
 describe('parseGameResponse', () => {
   describe('scene parsing', () => {

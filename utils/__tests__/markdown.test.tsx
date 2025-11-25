@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { renderMarkdown } from './markdown';
+import { renderMarkdown } from '../markdown';
 
 describe('renderMarkdown', () => {
   it('renders plain text as-is', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { STRICT_ART_STYLE, SYSTEM_INSTRUCTION } from './prompts';
+import { STRICT_ART_STYLE, SYSTEM_INSTRUCTION } from '../prompts';
 
 describe('STRICT_ART_STYLE', () => {
   it('includes anime aesthetic reference', () => {

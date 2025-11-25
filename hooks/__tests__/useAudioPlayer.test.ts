@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useAudioPlayer } from './useAudioPlayer';
+import { useAudioPlayer } from '../useAudioPlayer';
 
 vi.mock('@/services/gemini', () => ({
   generateSpeech: vi.fn()

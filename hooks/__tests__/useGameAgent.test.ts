@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useGameAgent } from './useGameAgent';
-import { QuestStatus, QuestType } from '../types';
+import { useGameAgent } from '../useGameAgent';
+import { QuestStatus, QuestType } from '../../types';
 
 vi.mock('@/services/agent', () => {
   const mockAgent = {

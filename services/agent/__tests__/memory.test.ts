@@ -11,8 +11,8 @@ import {
   needsSummary,
   updateSummary,
   getRelevantContext,
-} from './memory';
-import { GameMemory, CharacterProfile, NPCProfile } from './types';
+} from '../memory';
+import { CharacterProfile, NPCProfile } from '../types';
 
 describe('memory utilities', () => {
   beforeEach(() => {

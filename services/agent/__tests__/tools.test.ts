@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createAgentTools } from './tools';
-import { GameMemory, EventLogEntry } from './types';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createAgentTools } from '../tools';
+import { GameMemory } from '../types';
 import { GameStatus, Quest, QuestStatus, QuestType } from '@/types';
-import { createInitialMemory } from './memory';
+import { createInitialMemory } from '../memory';
 
 describe('createAgentTools', () => {
   let memory: GameMemory;

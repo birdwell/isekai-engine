@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MockLanguageModelV2 } from 'ai/test';
 import { generateText } from 'ai';
-import { GameMasterAgent, createGameMaster } from './gameMaster';
-import { createInitialMemory } from './memory';
+import { GameMasterAgent, createGameMaster } from '../gameMaster';
+import { createInitialMemory } from '../memory';
+import { Quest, QuestStatus, QuestType } from '@/types';
 
 const createMockResponse = (response: {
   scenePrompt?: string;
@@ -90,15 +91,16 @@ describe('GameMasterAgent', () => {
       });
 
       it('loads quests', () => {
-        const quests = [{
-          id: 'quest_1',
-          title: 'Test Quest',
-          description: 'A test quest',
-          type: 0,
-          status: 0,
-          objectives: [],
-          startedAt: Date.now(),
-        }];
+        const quests: Quest[] = [
+          {
+            title: 'Test Quest',
+            description: 'A test quest',
+            objectives: [],
+            startedAt: Date.now(),
+            id: '',
+            type: QuestType.Main,
+            status: QuestStatus.Active
+          }];
 
         agent.loadState(createInitialMemory(), null, quests, 0);
 

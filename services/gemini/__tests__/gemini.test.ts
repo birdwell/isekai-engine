@@ -27,11 +27,11 @@ vi.mock('@google/genai', () => {
 });
 
 import { GoogleGenAI } from '@google/genai';
-import { getClient } from './client';
-import { generateAdventureText } from './textGeneration';
-import { generateSceneImage } from './imageGeneration';
-import { generateSceneVideo } from './videoGeneration';
-import { generateSpeech } from './speechGeneration';
+import { getClient } from '../client';
+import { generateAdventureText } from '../textGeneration';
+import { generateSceneImage } from '../imageGeneration';
+import { generateSceneVideo } from '../videoGeneration';
+import { generateSpeech } from '../speechGeneration';
 
 describe('getClient', () => {
   const originalEnv = process.env;

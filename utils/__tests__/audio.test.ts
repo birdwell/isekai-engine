@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { decodeBase64, decodeAudioData } from './audio';
+import { decodeBase64, decodeAudioData } from '../audio';
 
 describe('decodeBase64', () => {
   it('decodes base64 string to Uint8Array', () => {

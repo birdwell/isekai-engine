@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useQuestSystem } from './useQuestSystem';
-import { QuestStatus, QuestType, QuestState } from '../types';
+import { useQuestSystem } from '../useQuestSystem';
+import { QuestStatus, QuestType, QuestState } from '../../types';
 
 describe('useQuestSystem', () => {
   describe('initialization', () => {

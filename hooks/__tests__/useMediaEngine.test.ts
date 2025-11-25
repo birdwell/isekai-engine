@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useMediaEngine } from './useMediaEngine';
+import { useMediaEngine } from '../useMediaEngine';
 
 vi.mock('@/services/gemini', () => ({
   generateSceneImage: vi.fn(),
