@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
-import { GameStatus, Quest } from '@/types';
+import { GameStatus, QuestSystem } from '@/types';
 import { StatCard } from './StatCard';
 import { LocationCard } from './LocationCard';
 import { CurrencyDisplay } from './CurrencyDisplay';
@@ -12,22 +12,15 @@ import { QuestLogModal } from './QuestLogModal';
 interface StatusPanelProps {
   status: GameStatus | null;
   onUseItem: (item: string) => void;
-  activeQuest: Quest | null;
-  quests: Quest[];
-  activeQuestId: string | null;
-  onSetActiveQuest: (questId: string) => void;
-  getQuestProgress: (questId: string) => number;
+  questSystem: QuestSystem;
 }
 
 export const StatusPanel: React.FC<StatusPanelProps> = ({ 
   status, 
   onUseItem, 
-  activeQuest,
-  quests,
-  activeQuestId,
-  onSetActiveQuest,
-  getQuestProgress
+  questSystem,
 }) => {
+  const { activeQuest, questState, setActiveQuest, getQuestProgress } = questSystem;
   const [isQuestLogOpen, setIsQuestLogOpen] = useState(false);
 
   if (!status) return null;
@@ -71,9 +64,9 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
       <QuestLogModal 
         isOpen={isQuestLogOpen} 
         onClose={() => setIsQuestLogOpen(false)} 
-        quests={quests}
-        activeQuestId={activeQuestId}
-        onSetActiveQuest={onSetActiveQuest}
+        quests={questState.quests}
+        activeQuestId={questState.activeQuestId}
+        onSetActiveQuest={setActiveQuest}
         getProgress={getQuestProgress}
       />
     </div>

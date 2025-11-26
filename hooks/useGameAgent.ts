@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { GameResponse, MediaItem, Quest, QuestStatus } from '../types';
+import { GameResponse, MediaItem, QuestStatus, QuestSystem } from '../types';
 import { 
   GameMasterAgent, 
   createGameMaster, 
@@ -184,7 +184,7 @@ export const useGameAgent = (hasApiKey: boolean) => {
     // This is a no-op for compatibility
   }, []);
 
-  const questSystem = {
+  const questSystem: QuestSystem = {
     activeQuest,
     questState: {
       quests,

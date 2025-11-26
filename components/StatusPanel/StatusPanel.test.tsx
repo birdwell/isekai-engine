@@ -9,7 +9,7 @@ import { SkillsDisplay } from './SkillsDisplay';
 import { QuestDisplay } from './QuestDisplay';
 import { QuestLogModal } from './QuestLogModal';
 import { StatusPanel } from './index';
-import { Quest, QuestStatus, QuestType, GameStatus } from '@/types';
+import { Quest, QuestStatus, QuestType, GameStatus, QuestSystem } from '@/types';
 
 describe('StatCard', () => {
   it('renders label and value', () => {
@@ -608,16 +608,20 @@ describe('StatusPanel', () => {
     startedAt: Date.now()
   };
 
+  const createMockQuestSystem = (overrides: Partial<QuestSystem> = {}): QuestSystem => ({
+    activeQuest: null,
+    questState: { quests: [], activeQuestId: null },
+    setActiveQuest: vi.fn(),
+    getQuestProgress: () => 0,
+    ...overrides,
+  });
+
   it('returns null when no status', () => {
     const { container } = render(
       <StatusPanel 
         status={null} 
         onUseItem={vi.fn()} 
-        activeQuest={null} 
-        quests={[]} 
-        activeQuestId={null} 
-        onSetActiveQuest={vi.fn()} 
-        getQuestProgress={() => 0} 
+        questSystem={createMockQuestSystem()}
       />
     );
     
@@ -629,11 +633,11 @@ describe('StatusPanel', () => {
       <StatusPanel 
         status={mockStatus} 
         onUseItem={vi.fn()} 
-        activeQuest={mockQuest} 
-        quests={[mockQuest]} 
-        activeQuestId="quest-1" 
-        onSetActiveQuest={vi.fn()} 
-        getQuestProgress={() => 25} 
+        questSystem={createMockQuestSystem({
+          activeQuest: mockQuest,
+          questState: { quests: [mockQuest], activeQuestId: 'quest-1' },
+          getQuestProgress: () => 25,
+        })}
       />
     );
     
@@ -651,11 +655,11 @@ describe('StatusPanel', () => {
       <StatusPanel 
         status={mockStatus} 
         onUseItem={vi.fn()} 
-        activeQuest={mockQuest} 
-        quests={[mockQuest]} 
-        activeQuestId="quest-1" 
-        onSetActiveQuest={vi.fn()} 
-        getQuestProgress={() => 25} 
+        questSystem={createMockQuestSystem({
+          activeQuest: mockQuest,
+          questState: { quests: [mockQuest], activeQuestId: 'quest-1' },
+          getQuestProgress: () => 25,
+        })}
       />
     );
     

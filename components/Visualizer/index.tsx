@@ -1,5 +1,10 @@
 import React from 'react';
-import { MediaItem } from '@/types';
+
+enum ViewState {
+  Loading = 'loading',
+  Media = 'media',
+  Empty = 'empty',
+}
 import { LoadingSpinner } from '@/components/ui';
 import { EmptyState } from './EmptyState';
 import { MediaDisplay } from './MediaDisplay';
@@ -7,68 +12,56 @@ import { GalleryNavigation } from './GalleryNavigation';
 import { NewSceneBadge } from './NewSceneBadge';
 import { ActionButtons } from './ActionButtons';
 import { ScanlineOverlay } from './ScanlineOverlay';
+import { useMediaEngineContext } from '@/contexts/MediaEngineContext';
 
 interface VisualizerProps {
-  mediaItem: MediaItem | null;
-  loading: boolean;
-  videoLoading: boolean;
   onGenerateVideo: () => void;
-  onPaintScene: () => void;
-  onRegenerate: () => void;
-  canPaintNew: boolean | undefined;
-  gallerySize: number;
-  currentIndex: number;
-  onNext: () => void;
-  onPrev: () => void;
 }
 
 export const Visualizer: React.FC<VisualizerProps> = ({ 
-  mediaItem,
-  loading, 
-  videoLoading, 
   onGenerateVideo,
-  onPaintScene,
-  onRegenerate,
-  canPaintNew,
-  gallerySize,
-  currentIndex,
-  onNext,
-  onPrev
 }) => {
+  const { gallery, currentIndex, currentMedia, imageLoading, videoLoading, generateImageForScene, regenerateCurrent, nextImage, prevImage, canPaintNew } = useMediaEngineContext();
   const loadingMessage = videoLoading ? 'Rendering Animation...' : 'Painting Scene...';
-  const isLoading = loading || videoLoading;
+  const isLoading = imageLoading || videoLoading;
+
+  const viewState = isLoading ? ViewState.Loading 
+    : currentMedia ? ViewState.Media 
+    : ViewState.Empty;
+
+  const showNewSceneBadge = viewState === ViewState.Media && canPaintNew;
+  const showActionButtons = viewState === ViewState.Media;
+  const showScanlines = !currentMedia?.videoUrl;
 
   return (
     <div className="relative w-full aspect-square flex-shrink-0 bg-black border-b border-slate-700 overflow-hidden group shadow-2xl">
       
-      {isLoading && <LoadingSpinner message={loadingMessage} />}
-
-      {!mediaItem && !loading && <EmptyState onPaintScene={onPaintScene} canPaint={!!canPaintNew} />}
-
-      {mediaItem && <MediaDisplay mediaItem={mediaItem} loading={loading} />}
+      {viewState === ViewState.Loading && <LoadingSpinner message={loadingMessage} />}
+      {viewState === ViewState.Empty && <EmptyState onPaintScene={generateImageForScene} canPaint={!!canPaintNew} />}
+      {viewState === ViewState.Media && <MediaDisplay mediaItem={currentMedia!} loading={false} />}
       
       <div className="absolute inset-0 z-30 pointer-events-none flex flex-col justify-between p-4">
         <div className="flex justify-between items-start pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <GalleryNavigation
-            gallerySize={gallerySize}
+            gallerySize={gallery.length}
             currentIndex={currentIndex}
-            onNext={onNext}
-            onPrev={onPrev}
+            onNext={nextImage}
+            onPrev={prevImage}
           />
           
-          {canPaintNew && !loading && <NewSceneBadge onClick={onPaintScene} />}
+          {showNewSceneBadge && <NewSceneBadge onClick={generateImageForScene} />}
         </div>
 
-        {mediaItem && !isLoading && (
+        {showActionButtons && (
           <ActionButtons
-            hasVideo={!!mediaItem.videoUrl}
-            onRegenerate={onRegenerate}
+            hasVideo={!!currentMedia!.videoUrl}
+            onRegenerate={regenerateCurrent}
             onGenerateVideo={onGenerateVideo}
           />
         )}
       </div>
 
-      {!mediaItem?.videoUrl && <ScanlineOverlay />}
+      {showScanlines && <ScanlineOverlay />}
     </div>
   );
 };

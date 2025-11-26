@@ -24,3 +24,11 @@ React 19 + Vite + TypeScript app. An AI-powered text adventure game using Google
 - Tailwind CSS for styling (utility classes inline)
 - Async/await with try-catch for API calls; log errors with `console.error`
 - Interface names: PascalCase (e.g., `GameStatus`, `ActionPanelProps`)
+- Everything is strongly typed; no `any` or implicit types
+- Write idiomatic React/TypeScript code
+
+## Component Design
+- Colocate variables as close to their usage as possible
+- Pass whole objects to components, not individual properties (e.g., `player={player}` not `name={player.name} health={player.health}`)
+- Push logic/hooks down to the lowest leaf component; avoid prop drilling through multiple levels
+- Keep components small with a single responsibility; split large components with multiple concerns

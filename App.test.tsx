@@ -2,6 +2,35 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
 
+vi.mock('@/contexts/UserContext', () => ({
+  useUserContext: () => ({
+    userId: 'test-user-id',
+    sessionId: 'test-session-id',
+    startNewSession: vi.fn()
+  })
+}));
+
+vi.mock('@/contexts/MediaEngineContext', () => ({
+  useMediaEngineContext: () => ({
+    currentMedia: null,
+    gallery: [],
+    currentIndex: 0,
+    imageLoading: false,
+    videoLoading: false,
+    autoPaint: false,
+    canPaintNew: false,
+    quality: 'fast',
+    setAutoPaint: vi.fn(),
+    setQuality: vi.fn(),
+    setScenePrompt: vi.fn(),
+    generateImageForScene: vi.fn(),
+    generateVideo: vi.fn(() => Promise.resolve(true)),
+    regenerateCurrent: vi.fn(),
+    nextImage: vi.fn(),
+    prevImage: vi.fn()
+  })
+}));
+
 vi.mock('@/components/StatusPanel', () => ({
   StatusPanel: ({ status }: { status: unknown }) => (
     <div data-testid="status-panel">{status ? 'Status loaded' : 'No status'}</div>
@@ -55,23 +84,7 @@ vi.mock('./hooks/useGameAgent', () => ({
   })
 }));
 
-vi.mock('./hooks/useMediaEngine', () => ({
-  useMediaEngine: () => ({
-    currentMedia: null,
-    gallery: [],
-    currentIndex: 0,
-    imageLoading: false,
-    videoLoading: false,
-    autoPaint: false,
-    canPaintNew: false,
-    setAutoPaint: vi.fn(),
-    generateImageForScene: vi.fn(),
-    generateVideo: vi.fn(() => Promise.resolve(true)),
-    regenerateCurrent: vi.fn(),
-    nextImage: vi.fn(),
-    prevImage: vi.fn()
-  })
-}));
+
 
 describe('App', () => {
   beforeEach(() => {

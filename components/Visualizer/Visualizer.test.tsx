@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 
 import { ScanlineOverlay } from './ScanlineOverlay';
 import { NewSceneBadge } from './NewSceneBadge';
@@ -25,6 +24,28 @@ vi.mock('lucide-react', () => ({
   RefreshCw: () => <span data-testid="refresh-icon" />,
   Clapperboard: () => <span data-testid="clapperboard-icon" />
 }));
+
+const mockGenerateImageForScene = vi.fn();
+const mockRegenerateCurrent = vi.fn();
+const mockNextImage = vi.fn();
+const mockPrevImage = vi.fn();
+
+vi.mock('@/contexts/MediaEngineContext', () => ({
+  useMediaEngineContext: vi.fn(() => ({
+    gallery: [],
+    currentIndex: 0,
+    currentMedia: null,
+    imageLoading: false,
+    videoLoading: false,
+    generateImageForScene: mockGenerateImageForScene,
+    regenerateCurrent: mockRegenerateCurrent,
+    nextImage: mockNextImage,
+    prevImage: mockPrevImage,
+    canPaintNew: false,
+  })),
+}));
+
+import { useMediaEngineContext } from '@/contexts/MediaEngineContext';
 
 const createMediaItem = (overrides = {}) => ({
   id: 'test-id',
@@ -205,62 +226,197 @@ describe('ActionButtons', () => {
 });
 
 describe('Visualizer', () => {
-  const defaultProps = {
-    mediaItem: null,
-    loading: false,
-    videoLoading: false,
-    onGenerateVideo: () => {},
-    onPaintScene: () => {},
-    onRegenerate: () => {},
-    canPaintNew: false,
-    gallerySize: 0,
-    currentIndex: 0,
-    onNext: () => {},
-    onPrev: () => {}
-  };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      gallery: [],
+      currentIndex: 0,
+      currentMedia: null,
+      imageLoading: false,
+      videoLoading: false,
+      autoPaint: false,
+      quality: 'fast',
+      setAutoPaint: vi.fn(),
+      setQuality: vi.fn(),
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: mockGenerateImageForScene,
+      regenerateCurrent: mockRegenerateCurrent,
+      nextImage: mockNextImage,
+      prevImage: mockPrevImage,
+      canPaintNew: false,
+    });
+  });
 
   it('shows loading state when loading is true', () => {
-    render(<Visualizer {...defaultProps} loading={true} />);
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      gallery: [],
+      currentIndex: 0,
+      currentMedia: null,
+      imageLoading: true,
+      videoLoading: false,
+      autoPaint: false,
+      quality: 'fast',
+      setAutoPaint: vi.fn(),
+      setQuality: vi.fn(),
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: mockGenerateImageForScene,
+      regenerateCurrent: mockRegenerateCurrent,
+      nextImage: mockNextImage,
+      prevImage: mockPrevImage,
+      canPaintNew: false,
+    });
+    render(<Visualizer onGenerateVideo={() => {}} />);
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
     expect(screen.getByText('Painting Scene...')).toBeInTheDocument();
   });
 
   it('shows video loading state when videoLoading is true', () => {
-    render(<Visualizer {...defaultProps} videoLoading={true} />);
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      gallery: [],
+      currentIndex: 0,
+      currentMedia: null,
+      imageLoading: false,
+      videoLoading: true,
+      autoPaint: false,
+      quality: 'fast',
+      setAutoPaint: vi.fn(),
+      setQuality: vi.fn(),
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: mockGenerateImageForScene,
+      regenerateCurrent: mockRegenerateCurrent,
+      nextImage: mockNextImage,
+      prevImage: mockPrevImage,
+      canPaintNew: false,
+    });
+    render(<Visualizer onGenerateVideo={() => {}} />);
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
     expect(screen.getByText('Rendering Animation...')).toBeInTheDocument();
   });
 
   it('shows empty state when no mediaItem and not loading', () => {
-    render(<Visualizer {...defaultProps} />);
+    render(<Visualizer onGenerateVideo={() => {}} />);
     expect(screen.getByText('No Visual Data')).toBeInTheDocument();
   });
 
   it('shows media content when mediaItem is present', () => {
     const mediaItem = createMediaItem();
-    render(<Visualizer {...defaultProps} mediaItem={mediaItem} />);
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      gallery: [mediaItem],
+      currentIndex: 0,
+      currentMedia: mediaItem,
+      imageLoading: false,
+      videoLoading: false,
+      autoPaint: false,
+      quality: 'fast',
+      setAutoPaint: vi.fn(),
+      setQuality: vi.fn(),
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: mockGenerateImageForScene,
+      regenerateCurrent: mockRegenerateCurrent,
+      nextImage: mockNextImage,
+      prevImage: mockPrevImage,
+      canPaintNew: false,
+    });
+    render(<Visualizer onGenerateVideo={() => {}} />);
     expect(screen.getByRole('img')).toBeInTheDocument();
   });
 
   it('shows NewSceneBadge when canPaintNew is true and not loading', () => {
-    render(<Visualizer {...defaultProps} canPaintNew={true} />);
+    const mediaItem = createMediaItem();
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      gallery: [mediaItem],
+      currentIndex: 0,
+      currentMedia: mediaItem,
+      imageLoading: false,
+      videoLoading: false,
+      autoPaint: false,
+      quality: 'fast',
+      setAutoPaint: vi.fn(),
+      setQuality: vi.fn(),
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: mockGenerateImageForScene,
+      regenerateCurrent: mockRegenerateCurrent,
+      nextImage: mockNextImage,
+      prevImage: mockPrevImage,
+      canPaintNew: true,
+    });
+    render(<Visualizer onGenerateVideo={() => {}} />);
     expect(screen.getByText('New Scene Available')).toBeInTheDocument();
   });
 
   it('hides NewSceneBadge when loading', () => {
-    render(<Visualizer {...defaultProps} canPaintNew={true} loading={true} />);
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      gallery: [],
+      currentIndex: 0,
+      currentMedia: null,
+      imageLoading: true,
+      videoLoading: false,
+      autoPaint: false,
+      quality: 'fast',
+      setAutoPaint: vi.fn(),
+      setQuality: vi.fn(),
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: mockGenerateImageForScene,
+      regenerateCurrent: mockRegenerateCurrent,
+      nextImage: mockNextImage,
+      prevImage: mockPrevImage,
+      canPaintNew: true,
+    });
+    render(<Visualizer onGenerateVideo={() => {}} />);
     expect(screen.queryByText('New Scene Available')).not.toBeInTheDocument();
   });
 
   it('shows ActionButtons when mediaItem present and not loading', () => {
     const mediaItem = createMediaItem();
-    render(<Visualizer {...defaultProps} mediaItem={mediaItem} />);
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      gallery: [mediaItem],
+      currentIndex: 0,
+      currentMedia: mediaItem,
+      imageLoading: false,
+      videoLoading: false,
+      autoPaint: false,
+      quality: 'fast',
+      setAutoPaint: vi.fn(),
+      setQuality: vi.fn(),
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: mockGenerateImageForScene,
+      regenerateCurrent: mockRegenerateCurrent,
+      nextImage: mockNextImage,
+      prevImage: mockPrevImage,
+      canPaintNew: false,
+    });
+    render(<Visualizer onGenerateVideo={() => {}} />);
     expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
   });
 
   it('renders ScanlineOverlay when no video', () => {
     const mediaItem = createMediaItem({ videoUrl: null });
-    const { container } = render(<Visualizer {...defaultProps} mediaItem={mediaItem} />);
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      gallery: [mediaItem],
+      currentIndex: 0,
+      currentMedia: mediaItem,
+      imageLoading: false,
+      videoLoading: false,
+      autoPaint: false,
+      quality: 'fast',
+      setAutoPaint: vi.fn(),
+      setQuality: vi.fn(),
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: mockGenerateImageForScene,
+      regenerateCurrent: mockRegenerateCurrent,
+      nextImage: mockNextImage,
+      prevImage: mockPrevImage,
+      canPaintNew: false,
+    });
+    const { container } = render(<Visualizer onGenerateVideo={() => {}} />);
     const overlayDivs = container.querySelectorAll('.pointer-events-none');
     expect(overlayDivs.length).toBeGreaterThan(0);
   });

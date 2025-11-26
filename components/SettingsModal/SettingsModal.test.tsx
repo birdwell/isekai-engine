@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ToggleSwitch } from './ToggleSwitch';
 import { AutoPaintToggle } from './AutoPaintToggle';
@@ -6,16 +7,30 @@ import { QualityOption } from './QualityOption';
 import { QualitySettings } from './QualitySettings';
 import { SettingsModal } from './index';
 
+const mockSetQuality = vi.fn();
+const mockSetAutoPaint = vi.fn();
+
+vi.mock('@/contexts/MediaEngineContext', () => ({
+  useMediaEngineContext: vi.fn(() => ({
+    quality: 'fast' as const,
+    setQuality: mockSetQuality,
+    autoPaint: false,
+    setAutoPaint: mockSetAutoPaint,
+  })),
+}));
+
 vi.mock('lucide-react', async () => {
-  const actual = await vi.importActual('lucide-react');
+  const actual = await vi.importActual<typeof import('lucide-react')>('lucide-react');
   return {
     ...actual,
-    Zap: () => <span data-testid="zap-icon" />,
-    Star: () => <span data-testid="star-icon" />,
-    Paintbrush: () => <span data-testid="paintbrush-icon" />,
-    X: () => <span data-testid="x-icon" />,
+    Zap: (props: any) => <span data-testid="zap-icon" {...props} />,
+    Star: (props: any) => <span data-testid="star-icon" {...props} />,
+    Paintbrush: (props: any) => <span data-testid="paintbrush-icon" {...props} />,
+    X: (props: any) => <span data-testid="x-icon" {...props} />,
   };
 });
+
+import { useMediaEngineContext } from '@/contexts/MediaEngineContext';
 
 describe('ToggleSwitch', () => {
   it('renders with enabled state classes', () => {
@@ -75,7 +90,8 @@ describe('AutoPaintToggle', () => {
 });
 
 describe('QualityOption', () => {
-  const MockIcon = () => <span data-testid="mock-icon" />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const MockIcon = (({ className }: { className?: string }) => <span data-testid="mock-icon" className={className} />) as any;
 
   it('renders title and description', () => {
     render(
@@ -172,32 +188,81 @@ describe('QualitySettings', () => {
 });
 
 describe('SettingsModal', () => {
-  const defaultProps = {
-    isOpen: true,
-    onClose: vi.fn(),
-    quality: 'fast' as const,
-    setQuality: vi.fn(),
-    autoPaint: false,
-    setAutoPaint: vi.fn(),
-  };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      quality: 'fast',
+      setQuality: mockSetQuality,
+      autoPaint: false,
+      setAutoPaint: mockSetAutoPaint,
+      gallery: [],
+      currentIndex: 0,
+      currentMedia: null,
+      imageLoading: false,
+      videoLoading: false,
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: vi.fn(),
+      regenerateCurrent: vi.fn(),
+      nextImage: vi.fn(),
+      prevImage: vi.fn(),
+      canPaintNew: false,
+    });
+  });
 
   it('returns null when not open', () => {
-    const { container } = render(<SettingsModal {...defaultProps} isOpen={false} />);
+    const { container } = render(<SettingsModal isOpen={false} onClose={() => {}} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders modal content when open', () => {
-    render(<SettingsModal {...defaultProps} />);
+    render(<SettingsModal isOpen={true} onClose={() => {}} />);
     expect(screen.getByText('System Configuration')).toBeInTheDocument();
   });
 
   it('renders AutoPaintToggle with correct props', () => {
-    render(<SettingsModal {...defaultProps} autoPaint={true} />);
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      quality: 'fast',
+      setQuality: mockSetQuality,
+      autoPaint: true,
+      setAutoPaint: mockSetAutoPaint,
+      gallery: [],
+      currentIndex: 0,
+      currentMedia: null,
+      imageLoading: false,
+      videoLoading: false,
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: vi.fn(),
+      regenerateCurrent: vi.fn(),
+      nextImage: vi.fn(),
+      prevImage: vi.fn(),
+      canPaintNew: false,
+    });
+    render(<SettingsModal isOpen={true} onClose={() => {}} />);
     expect(screen.getByText('Images generate automatically every turn.')).toBeInTheDocument();
   });
 
   it('renders QualitySettings with correct props', () => {
-    render(<SettingsModal {...defaultProps} quality="quality" />);
+    vi.mocked(useMediaEngineContext).mockReturnValue({
+      quality: 'quality',
+      setQuality: mockSetQuality,
+      autoPaint: false,
+      setAutoPaint: mockSetAutoPaint,
+      gallery: [],
+      currentIndex: 0,
+      currentMedia: null,
+      imageLoading: false,
+      videoLoading: false,
+      setScenePrompt: vi.fn(),
+      generateVideo: vi.fn(),
+      generateImageForScene: vi.fn(),
+      regenerateCurrent: vi.fn(),
+      nextImage: vi.fn(),
+      prevImage: vi.fn(),
+      canPaintNew: false,
+    });
+    render(<SettingsModal isOpen={true} onClose={() => {}} />);
     const buttons = screen.getAllByRole('button');
     const proQualityButton = buttons.find(b => b.textContent?.includes('Pro Quality'));
     expect(proQualityButton?.className).toContain('border-amber-500');
@@ -205,7 +270,7 @@ describe('SettingsModal', () => {
 
   it('calls onClose when X button clicked', () => {
     const onClose = vi.fn();
-    render(<SettingsModal {...defaultProps} onClose={onClose} />);
+    render(<SettingsModal isOpen={true} onClose={onClose} />);
     const buttons = screen.getAllByRole('button');
     const closeButton = buttons.find(b => b.querySelector('[data-testid="x-icon"]'));
     fireEvent.click(closeButton!);
@@ -214,22 +279,20 @@ describe('SettingsModal', () => {
 
   it('calls onClose when Confirm button clicked', () => {
     const onClose = vi.fn();
-    render(<SettingsModal {...defaultProps} onClose={onClose} />);
+    render(<SettingsModal isOpen={true} onClose={onClose} />);
     fireEvent.click(screen.getByText('Confirm'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('calls setAutoPaint when toggle clicked', () => {
-    const setAutoPaint = vi.fn();
-    render(<SettingsModal {...defaultProps} autoPaint={false} setAutoPaint={setAutoPaint} />);
+    render(<SettingsModal isOpen={true} onClose={() => {}} />);
     fireEvent.click(screen.getByText('Auto-Paint Scenes'));
-    expect(setAutoPaint).toHaveBeenCalledWith(true);
+    expect(mockSetAutoPaint).toHaveBeenCalledWith(true);
   });
 
   it('calls setQuality when quality option clicked', () => {
-    const setQuality = vi.fn();
-    render(<SettingsModal {...defaultProps} quality="fast" setQuality={setQuality} />);
+    render(<SettingsModal isOpen={true} onClose={() => {}} />);
     fireEvent.click(screen.getByText('Pro Quality'));
-    expect(setQuality).toHaveBeenCalledWith('quality');
+    expect(mockSetQuality).toHaveBeenCalledWith('quality');
   });
 });

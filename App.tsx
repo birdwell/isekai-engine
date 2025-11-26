@@ -4,23 +4,26 @@ import { NarrativeDisplay } from '@/components/NarrativeDisplay';
 import { ActionPanel } from '@/components/ActionPanel';
 import { Visualizer } from '@/components/Visualizer';
 import { SettingsModal } from '@/components/SettingsModal';
-import { NotificationToast, Notification } from '@/components/NotificationToast';
+import { NotificationToast } from '@/components/NotificationToast';
 import { AppHeader } from '@/components/AppHeader';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { AuthScreen } from '@/components/AuthScreen';
-import { useGameAgent } from './hooks/useGameAgent';
-import { useMediaEngine } from './hooks/useMediaEngine';
+import { useGameAgent } from '@/hooks/useGameAgent';
+import { useNotification } from '@/hooks/useNotification';
+import { useApiKeyAuth } from '@/hooks/useApiKeyAuth';
 import { shutdownLangfuse, setLangfuseUserId, setLangfuseSessionId } from '@/services/langfuse';
 import { useUserContext } from '@/contexts/UserContext';
+import { useMediaEngineContext } from '@/contexts/MediaEngineContext';
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [imageQuality, setImageQuality] = useState<'fast' | 'quality'>('fast');
-  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
-  const [isCheckingKey, setIsCheckingKey] = useState<boolean>(true);
-  const [notification, setNotification] = useState<Notification | null>(null);
 
   const { userId, sessionId, startNewSession } = useUserContext();
+  const { hasApiKey, isCheckingKey, handleSelectKey } = useApiKeyAuth();
+  const { notification, showNotification } = useNotification();
+  const mediaEngine = useMediaEngineContext();
+
+  const gameState = useGameAgent(hasApiKey);
 
   useEffect(() => {
     setLangfuseUserId(userId);
@@ -30,29 +33,19 @@ function App() {
     setLangfuseSessionId(sessionId);
   }, [sessionId]);
 
-  const gameState = useGameAgent(hasApiKey);
-  const mediaEngine = useMediaEngine(gameState.lastResponse?.scenePrompt, imageQuality);
+  useEffect(() => {
+    mediaEngine.setScenePrompt(gameState.lastResponse?.scenePrompt);
+  }, [gameState.lastResponse?.scenePrompt, mediaEngine.setScenePrompt]);
 
   useEffect(() => {
     gameState.setGalleryRef(mediaEngine.gallery);
   }, [mediaEngine.gallery, gameState.setGalleryRef]);
 
-  const showNotification = (msg: string, type: 'success' | 'error' = 'success') => {
-    setNotification({ msg, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  const handleSelectKey = async () => {
-    if ((window as any).aistudio) {
-      try {
-        await (window as any).aistudio.openSelectKey();
-        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-        setHasApiKey(hasKey);
-      } catch(e) {
-        console.error(e);
-      }
-    }
-  };
+  useEffect(() => {
+    return () => {
+      shutdownLangfuse();
+    };
+  }, []);
 
   const handleSave = () => {
     const success = gameState.saveGame(mediaEngine.gallery);
@@ -86,28 +79,6 @@ function App() {
     else showNotification("Video generation failed", 'error');
   };
 
-  useEffect(() => {
-    const checkKey = async () => {
-      try {
-        if ((window as any).aistudio) {
-          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-          setHasApiKey(hasKey);
-        } else {
-          setHasApiKey(true);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsCheckingKey(false);
-      }
-    };
-    checkKey();
-
-    return () => {
-      shutdownLangfuse();
-    };
-  }, []);
-
   if (isCheckingKey) {
     return <LoadingScreen />;
   }
@@ -122,10 +93,6 @@ function App() {
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)}
-        quality={imageQuality}
-        setQuality={setImageQuality}
-        autoPaint={mediaEngine.autoPaint}
-        setAutoPaint={mediaEngine.setAutoPaint}
       />
 
       <NotificationToast notification={notification} />
@@ -144,28 +111,12 @@ function App() {
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
         
         <div className="flex flex-col w-full md:w-[380px] lg:w-[480px] bg-slate-900/50 border-r border-slate-800 shrink-0 overflow-y-auto custom-scrollbar">
-          <Visualizer 
-            mediaItem={mediaEngine.currentMedia} 
-            gallerySize={mediaEngine.gallery.length}
-            currentIndex={mediaEngine.currentIndex}
-            loading={mediaEngine.imageLoading} 
-            videoLoading={mediaEngine.videoLoading}
-            onGenerateVideo={handleGenerateVideo}
-            onPaintScene={mediaEngine.generateImageForScene}
-            onRegenerate={mediaEngine.regenerateCurrent}
-            canPaintNew={mediaEngine.canPaintNew}
-            onNext={mediaEngine.nextImage}
-            onPrev={mediaEngine.prevImage}
-          />
+          <Visualizer onGenerateVideo={handleGenerateVideo} />
           <div className="flex-1 relative">
-            <StatusPanel 
+            <StatusPanel
               status={gameState.lastResponse?.status || null} 
               onUseItem={(item) => !gameState.loading && gameState.handleTurn(`I use the ${item}.`)}
-              activeQuest={gameState.questSystem.activeQuest}
-              quests={gameState.questSystem.questState.quests}
-              activeQuestId={gameState.questSystem.questState.activeQuestId}
-              onSetActiveQuest={gameState.questSystem.setActiveQuest}
-              getQuestProgress={gameState.questSystem.getQuestProgress}
+              questSystem={gameState.questSystem}
             />
           </div>
         </div>

@@ -2,24 +2,19 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { AutoPaintToggle } from './AutoPaintToggle';
 import { QualitySettings } from './QualitySettings';
+import { useMediaEngineContext } from '@/contexts/MediaEngineContext';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  quality: 'fast' | 'quality';
-  setQuality: (q: 'fast' | 'quality') => void;
-  autoPaint: boolean;
-  setAutoPaint: (b: boolean) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ 
   isOpen, 
-  onClose, 
-  quality, 
-  setQuality,
-  autoPaint,
-  setAutoPaint
+  onClose
 }) => {
+  const { quality, setQuality, autoPaint, setAutoPaint } = useMediaEngineContext();
+
   if (!isOpen) return null;
 
   return (

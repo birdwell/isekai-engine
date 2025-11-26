@@ -82,3 +82,15 @@ export enum GamePhase {
   Playing,
   Error
 }
+
+export interface QuestSystem {
+  activeQuest: Quest | null;
+  questState: QuestState;
+  setActiveQuest: (questId: string | null) => void;
+  getQuestProgress: (questId: string) => number;
+}
+
+export interface AIStudio {
+  openSelectKey: () => Promise<void>;
+  hasSelectedApiKey: () => Promise<boolean>;
+}
