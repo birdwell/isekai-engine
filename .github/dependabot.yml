@@ -8,6 +8,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       security:
         applies-to: security-updates
