@@ -180,7 +180,7 @@ Current Turn: ${this.turnCount}
     try {
       const { text, usage } = await generateText({
         model: this.google(this.model),
-        system: systemPrompt,
+        instructions: systemPrompt,
         messages: this.conversationHistory,
         tools,
         stopWhen: stepCountIs(5),

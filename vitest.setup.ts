@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { vi, beforeAll, afterAll } from 'vitest';
 
 const originalConsoleError = console.error;
@@ -67,7 +67,7 @@ vi.mock('ai', async (importOriginal) => {
   return {
     ...actual,
     generateText: vi.fn().mockImplementation(async (options) => {
-      if (options.model?.constructor?.name === 'MockLanguageModelV2') {
+      if (options.model?.constructor?.name === 'MockLanguageModelV4') {
         return actual.generateText(options);
       }
       return {
