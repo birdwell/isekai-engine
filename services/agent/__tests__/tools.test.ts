@@ -42,7 +42,7 @@ describe('createAgentTools', () => {
     it('returns no memories when empty', async () => {
       const result = await tools.recallMemory.execute(
         { query: 'dragon', type: 'all' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toBe('No matching memories found.');
     });
@@ -59,7 +59,7 @@ describe('createAgentTools', () => {
 
       const result = await tools.recallMemory.execute(
         { query: 'dragon', type: 'events' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toContain('Fought a dragon');
     });
@@ -76,7 +76,7 @@ describe('createAgentTools', () => {
 
       const result = await tools.recallMemory.execute(
         { query: 'bob', type: 'npcs' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toContain('Bob the Merchant');
       expect(result).toContain('friendly');
@@ -87,7 +87,7 @@ describe('createAgentTools', () => {
 
       const result = await tools.recallMemory.execute(
         { query: 'forest', type: 'locations' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toContain('Dark Forest');
     });
@@ -102,7 +102,7 @@ describe('createAgentTools', () => {
           importance: 'high',
           turn: 5,
         },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(result).toContain('Event logged');
@@ -127,7 +127,7 @@ describe('createAgentTools', () => {
           importance: 'low',
           turn: 101,
         },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(memory.eventLog.length).toBeLessThanOrEqual(100);
@@ -138,7 +138,7 @@ describe('createAgentTools', () => {
     it('returns inventory items', async () => {
       const result = await tools.checkInventory.execute(
         {},
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toContain('Sword');
       expect(result).toContain('Potion');
@@ -148,7 +148,7 @@ describe('createAgentTools', () => {
       status!.inventory = [];
       const result = await tools.checkInventory.execute(
         {},
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toBe('Inventory is empty.');
     });
@@ -157,7 +157,7 @@ describe('createAgentTools', () => {
       status = null;
       const result = await tools.checkInventory.execute(
         {},
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toBe('Inventory is empty.');
     });
@@ -167,7 +167,7 @@ describe('createAgentTools', () => {
     it('adds items to inventory', async () => {
       const result = await tools.modifyInventory.execute(
         { action: 'add', items: ['Shield', 'Helmet'] },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(result).toContain('Added');
@@ -178,7 +178,7 @@ describe('createAgentTools', () => {
     it('removes items from inventory', async () => {
       const result = await tools.modifyInventory.execute(
         { action: 'remove', items: ['Sword'] },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(result).toContain('Removed');
@@ -188,7 +188,7 @@ describe('createAgentTools', () => {
     it('handles case-insensitive removal', async () => {
       await tools.modifyInventory.execute(
         { action: 'remove', items: ['SWORD'] },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(status!.inventory).not.toContain('Sword');
@@ -197,7 +197,7 @@ describe('createAgentTools', () => {
     it('returns message when items not found', async () => {
       const result = await tools.modifyInventory.execute(
         { action: 'remove', items: ['NonexistentItem'] },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toBe('Items not found.');
     });
@@ -206,7 +206,7 @@ describe('createAgentTools', () => {
       status = null;
       const result = await tools.modifyInventory.execute(
         { action: 'add', items: ['Shield'] },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toBe('No active game status.');
     });
@@ -216,7 +216,7 @@ describe('createAgentTools', () => {
     it('updates HP', async () => {
       await tools.updatePlayerStatus.execute(
         { hp: '80/100' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(status!.hp).toBe('80/100');
     });
@@ -224,7 +224,7 @@ describe('createAgentTools', () => {
     it('updates location and adds to visited', async () => {
       await tools.updatePlayerStatus.execute(
         { location: 'Dark Forest' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(status!.location).toBe('Dark Forest');
@@ -237,7 +237,7 @@ describe('createAgentTools', () => {
       
       await tools.updatePlayerStatus.execute(
         { location: 'Starting Town' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(memory.world.visitedLocations.filter(l => l === 'Starting Town')).toHaveLength(1);
@@ -246,7 +246,7 @@ describe('createAgentTools', () => {
     it('updates currency', async () => {
       await tools.updatePlayerStatus.execute(
         { gold: 100, silver: 50 },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(status!.currency.gold).toBe(100);
@@ -258,7 +258,7 @@ describe('createAgentTools', () => {
       status = null;
       const result = await tools.updatePlayerStatus.execute(
         { hp: '80/100' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toBe('No active game status.');
     });
@@ -268,7 +268,7 @@ describe('createAgentTools', () => {
     it('returns no quest message when empty', async () => {
       const result = await tools.getActiveQuest.execute(
         {},
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toBe('No active quest.');
     });
@@ -289,7 +289,7 @@ describe('createAgentTools', () => {
 
       const result = await tools.getActiveQuest.execute(
         {},
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(result).toContain('Slay the Dragon');
@@ -306,7 +306,7 @@ describe('createAgentTools', () => {
           description: 'Locate the ancient artifact',
           objectives: ['Travel to ruins', 'Solve puzzle', 'Retrieve artifact'],
         },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(result).toContain('Quest created');
@@ -334,7 +334,7 @@ describe('createAgentTools', () => {
           questId: 'quest_1',
           objectiveId: 'obj_0',
         },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(quests[0].objectives[0].isCompleted).toBe(true);
@@ -353,7 +353,7 @@ describe('createAgentTools', () => {
 
       await tools.updateQuest.execute(
         { action: 'complete_quest', questId: 'quest_1' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(quests[0].status).toBe(QuestStatus.Completed);
@@ -373,7 +373,7 @@ describe('createAgentTools', () => {
 
       await tools.updateQuest.execute(
         { action: 'fail_quest', questId: 'quest_1' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(quests[0].status).toBe(QuestStatus.Failed);
@@ -382,7 +382,7 @@ describe('createAgentTools', () => {
     it('returns error for non-existent quest', async () => {
       const result = await tools.updateQuest.execute(
         { action: 'complete_quest', questId: 'nonexistent' },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
       expect(result).toBe('Quest not found.');
     });
@@ -399,7 +399,7 @@ describe('createAgentTools', () => {
           location: 'Wizard Tower',
           note: 'Gave us a quest',
         },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(result).toContain('NPC registered');
@@ -426,7 +426,7 @@ describe('createAgentTools', () => {
           location: 'Wizard Tower',
           note: 'Now our ally',
         },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(memory.world.knownNPCs).toHaveLength(1);
@@ -446,7 +446,7 @@ describe('createAgentTools', () => {
           cheatSkill: 'Time Stop',
           visualTags: ['silver hair', 'purple eyes', 'flowing robes'],
         },
-        { toolCallId: 'test', messages: [] }
+        { toolCallId: 'test', messages: [], context: {} }
       );
 
       expect(result).toContain('Character created');

@@ -25,12 +25,14 @@ export const generateSceneVideo = async (
 
     let operation = await ai.models.generateVideos({
       model: "veo-3.1-fast-generate-preview",
-      prompt:
-        `${STRICT_ART_STYLE} ${prompt}` ||
-        "Cinematic movement, slow motion, fantasy anime style",
-      image: {
-        imageBytes: base64Data,
-        mimeType: mimeType,
+      source: {
+        prompt:
+          `${STRICT_ART_STYLE} ${prompt}` ||
+          "Cinematic movement, slow motion, fantasy anime style",
+        image: {
+          imageBytes: base64Data,
+          mimeType: mimeType,
+        },
       },
       config: {
         numberOfVideos: 1,

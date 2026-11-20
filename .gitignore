@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 coverage/
+playwright-report/
+test-results/
+blob-report/

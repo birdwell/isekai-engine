@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MockLanguageModelV2 } from 'ai/test';
+import { MockLanguageModelV4 } from 'ai/test';
 import { generateText } from 'ai';
 import { GameMasterAgent, createGameMaster } from '../gameMaster';
 import { createInitialMemory } from '../memory';
@@ -30,8 +30,11 @@ const createMockResponse = (response: {
 };
 
 const createMockDoGenerate = (text: string) => ({
-  finishReason: 'stop' as const,
-  usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+  finishReason: { unified: 'stop' as const, raw: undefined },
+  usage: {
+    inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 },
+    outputTokens: { total: 20, text: 20, reasoning: 0 },
+  },
   content: [{ type: 'text' as const, text }],
   warnings: [],
 });
@@ -111,9 +114,9 @@ describe('GameMasterAgent', () => {
   });
 });
 
-describe('MockLanguageModelV2 integration', () => {
+describe('MockLanguageModelV4 integration', () => {
   it('can mock generateText', async () => {
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => createMockDoGenerate(
         createMockResponse({ narrative: 'The adventure begins!' })
       ),
@@ -128,7 +131,7 @@ describe('MockLanguageModelV2 integration', () => {
   });
 
   it('parses valid JSON response', async () => {
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => createMockDoGenerate(
         createMockResponse({
           narrative: 'You stand before a dragon.',
@@ -148,7 +151,7 @@ describe('MockLanguageModelV2 integration', () => {
   });
 
   it('includes default status values', async () => {
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => createMockDoGenerate(createMockResponse({})),
     });
 
@@ -164,7 +167,7 @@ describe('MockLanguageModelV2 integration', () => {
   });
 
   it('parses choices correctly', async () => {
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => createMockDoGenerate(
         createMockResponse({
           choices: [
@@ -189,7 +192,7 @@ describe('MockLanguageModelV2 integration', () => {
   it('can simulate multi-step behavior', async () => {
     let callCount = 0;
     
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => {
         callCount++;
         return createMockDoGenerate(
@@ -205,7 +208,7 @@ describe('MockLanguageModelV2 integration', () => {
   });
 
   it('tracks doGenerate calls', async () => {
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => createMockDoGenerate(
         createMockResponse({ narrative: 'Test' })
       ),
@@ -220,7 +223,7 @@ describe('MockLanguageModelV2 integration', () => {
 
 describe('parseAgentResponse edge cases', () => {
   it('handles response with extra whitespace', async () => {
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => createMockDoGenerate(
         `  \n${createMockResponse({ narrative: 'Test' })}\n  `
       ),
@@ -238,7 +241,7 @@ describe('parseAgentResponse edge cases', () => {
   });
 
   it('handles response with preamble text', async () => {
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => createMockDoGenerate(
         `Here is the response:\n${createMockResponse({ narrative: 'Adventure awaits' })}`
       ),
@@ -261,7 +264,7 @@ describe('parseAgentResponse edge cases', () => {
       narrative: 'Test narrative',
     });
 
-    const mockModel = new MockLanguageModelV2({
+    const mockModel = new MockLanguageModelV4({
       doGenerate: async () => createMockDoGenerate(complexResponse),
     });
 
