@@ -1,8 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Route } from '@playwright/test';
+
+const blockModelCall = async (route: Route) => {
+  // Hold the blocked call so the loading state can paint.
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  await route.abort();
+};
 
 test('boots the game shell, changes settings, and accepts an action', async ({ page }) => {
-  await page.route('**/*generativelanguage.googleapis.com/**', (route) => route.abort());
-  await page.route('**/*aiplatform.googleapis.com/**', (route) => route.abort());
+  await page.route('**/*generativelanguage.googleapis.com/**', blockModelCall);
+  await page.route('**/*aiplatform.googleapis.com/**', blockModelCall);
 
   await page.goto('/');
 
