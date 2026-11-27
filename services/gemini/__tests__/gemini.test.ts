@@ -53,7 +53,7 @@ describe('getClient', () => {
 
   it('logs error when API_KEY missing', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    delete process.env.API_KEY;
+    Reflect.deleteProperty(process.env, 'API_KEY');
     getClient();
     expect(consoleSpy).toHaveBeenCalledWith('API_KEY is missing from environment variables.');
     consoleSpy.mockRestore();

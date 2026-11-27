@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGameAgent } from '../useGameAgent';
-import { QuestStatus, QuestType } from '../../types';
+import { QuestStatus, QuestType, type Quest } from '../../types';
 
 vi.mock('@/services/agent', () => {
   const mockAgent = {
@@ -13,7 +13,7 @@ vi.mock('@/services/agent', () => {
       lastSummary: '',
       lastSummaryTurn: 0,
     })),
-    getQuests: vi.fn(() => []),
+    getQuests: vi.fn((): Quest[] => []),
     getTurnCount: vi.fn(() => 0),
     loadState: vi.fn(),
   };
@@ -71,7 +71,7 @@ describe('useGameAgent', () => {
         lastSummary: '',
         lastSummaryTurn: 0,
       })),
-      getQuests: vi.fn(() => []),
+      getQuests: vi.fn((): Quest[] => []),
       getTurnCount: vi.fn(() => 0),
       loadState: vi.fn(),
     };
